@@ -1,29 +1,55 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const Movies = ()=> {
     const [movies, setMovies] =  useState([]);
 
     useEffect(() => {
-        let movieList = [
-            {
-                id: 1,
-                title: "Full Metal Alchemist Brotherhood",
-                releaseDate: "2010-04-07",
-                episodes: 64,
-                rating: "10",
-                description: "some long description"
-            },
-            {
-                id: 2,
-                title: "Fruits Basket",
-                releaseDate: "2019-04-12",
-                episodes: 60,
-                rating: "9",
-                description: "some long description"
-            },
-        ];
-        setMovies(movieList);
+        // const headers = new Headers();
+        // headers.append("Content-Type", "application/json");
+        // axios({ Algun problema con los headers aca
+        //     url: 'http://localhost:8080/movies',
+        //     method: "GET",
+        //     headers: headers
+        // }).then((response) =>{
+        //     console.log(response);
+        //     setMovies(response.data);
+        // }).catch(err => {
+        //     console.log(err);
+        // })
+
+        const fetchData = async () => {
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            try {
+                //changing this to just /movies would work addding a proxy on packe.json to localhost:8080(port of the db)
+              const response = await axios.get('http://localhost:8080/movies', {headers});
+              setMovies(response.data);
+            } catch (error) {
+              console.log(error);
+            }
+        };
+      
+        fetchData();
+
+        // const headers = new Headers();
+        // headers.append("Content-Type", "application/json");
+
+        // const requestOptions = {
+        //     method: "GET",
+        //     headers: headers,
+        // }
+
+        // fetch(`http://localhost:8080/movies`, requestOptions)
+        //     .then((response) => response.json())
+        //     .then((data) => {
+        //         setMovies(data);
+        //     })
+        //     .catch(err => {
+        //         console.log(err);
+        //     })
     }, [])
 
 
@@ -46,7 +72,7 @@ const Movies = ()=> {
                                 <td>
                                     <Link to={`/movies/${m.id}`}>{m.title}</Link>
                                 </td>
-                                <td>{m.releaseDate}</td>
+                                <td>{m.release_date}</td>
                                 <td>{m.rating}</td>
                             </tr>
                         ))}

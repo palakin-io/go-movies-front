@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 import Alert from './components/Alert';
 
@@ -9,11 +10,100 @@ function App() {
   const [alertMsg, setAlertMsg] = useState("");
   const [alertClassname, setAlertClass] = useState("d-none");
 
+  const [tickInterval, setTickInterval] = useState();
+
   const navigate = useNavigate();
-  const logOut = () => {
-    setJwtToken("");
-    navigate("/");
+  const logOut = async () => {
+    // const requestOptions = {
+    //   method: "GET",
+    //   credentials: "include"
+    // }
+
+    // fetch(`http://localhost:8080/logout`, requestOptions).catch(error => {
+    //   console.log("error logging out", error);
+    // }).finally(() => {
+    //   setJwtToken("");
+    // })
+
+    try {
+      await axios.get('http://localhost:8080/logout', {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setJwtToken("");
+      navigate("/");
+      toggleRefresh(false);
+    }
   };
+
+  const toggleRefresh = useCallback((status) => {
+    const fetchData = async () => {
+      if (jwtToken === '') {
+        try {
+          const response = await axios.get('http://localhost:8080/refresh', {
+            withCredentials: true,
+          });
+          const data = response.data;
+          if (data.access_token) {
+            setJwtToken(data.access_token);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+
+    if (status) {
+      let i = setInterval(() => {
+        fetchData();
+      }, 600000);
+      console.log("turning on ticking");
+      setTickInterval(i);
+      console.log("sdasdsad");
+    } else {
+      console.log("turning off");
+      console.log("turning off", tickInterval);
+      setTickInterval(null);
+      clearInterval(tickInterval);
+    }
+  }, [tickInterval, jwtToken])
+
+  useEffect(() => {
+    // if (jwtToken === ""){
+    //   const requestOptions = {
+    //     method: "GET",
+    //     credentials: "include"
+    //   }
+
+    //   fetch(`http://localhost:8080/refresh`, requestOptions).then((response) => response.json()).then((data) => {
+    //     if (data.access_token) {
+    //       setJwtToken(data.access_token)
+    //     }
+    //   }).catch(error => {
+    //     console.log(error);
+    //   })
+    // }
+    const fetchData = async () => {
+      if (jwtToken === '') {
+        try {
+          const response = await axios.get('http://localhost:8080/refresh', {
+            withCredentials: true,
+          });
+          const data = response.data;
+          if (data.access_token) {
+            setJwtToken(data.access_token);
+            toggleRefresh(true);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+
+    fetchData();
+  }, [jwtToken, toggleRefresh])
 
   return (
     <div className="container">
@@ -48,7 +138,7 @@ function App() {
         </div>
         <div className="col-md-10">
           <Alert className={alertClassname} message={alertMsg}></Alert>
-          <Outlet context={{jwtToken, setJwtToken, setAlertClass, setAlertMsg}}></Outlet>
+          <Outlet context={{jwtToken, setJwtToken, setAlertClass, setAlertMsg, toggleRefresh}}></Outlet>
         </div>
       </div>
     </div>

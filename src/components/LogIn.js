@@ -1,6 +1,7 @@
-import { useState } from "react";
-import Input from "./form/Input";
+import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import axios from "axios";
+import Input from "./form/Input";
 
 const LogIn = ()=> {
     const [email, setEmail] = useState("");
@@ -11,18 +12,80 @@ const LogIn = ()=> {
     const {setJwtToken} = useOutletContext();
     const {setAlertClass} = useOutletContext();
     const {setAlertMsg} = useOutletContext();
+    const { toggleRefresh } = useOutletContext();
+    const {jwtToken} = useOutletContext();
 
-    const handleSubmit = (e) =>{
+    useEffect(() => {
+      if (jwtToken !== "") {
+        navigate("/");
+        return; 
+      }
+    })
+
+    const handleSubmit = async (e) =>{
         e.preventDefault();
-        console.log("email/pass", email, pwd);
-        if (email === "admin@example.com") {
-            setJwtToken("abc");
-            setAlertClass("d-none");
-            setAlertMsg("");
-            navigate("/");
-        } else {
-            setAlertClass("alert-danger");
-            setAlertMsg("Invalid Credentials");
+        // build the request payload
+
+        // let payload = {
+        //     email: email,
+        //     password: pwd,
+        // }
+
+        // const requestOptions = {
+        //     method: "POST",
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     credentials: 'include',
+        //     body: JSON.stringify(payload),
+        // }
+
+        // fetch(`http://localhost:8080/authenticate`, requestOptions)
+        //     .then((response) => response.json())
+        //     .then((data) => {
+        //         if (data.error) {
+        //             setAlertClass("alert-danger");
+        //             setAlertMsg(data.message);
+        //         } else {
+        //             setJwtToken(data.access_token);
+        //             setAlertClass("d-none");
+        //             setAlertMsg("");
+        //             navigate("/");
+        //         }
+        //     })
+        //     .catch(error => {
+        //         setAlertClass("alert-danger");
+        //         setAlertMsg(error);
+        //     })
+
+        try {
+            // Build the request payload
+            let payload = {
+              email: email,
+              password: pwd,
+            };
+      
+            const response = await axios.post('http://localhost:8080/authenticate', payload, {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              withCredentials: true,
+            });
+      
+            const data = response.data;
+            if (data.error) {
+              setAlertClass('alert-danger');
+              setAlertMsg(data.message);
+            } else {
+              setJwtToken(data.access_token);
+              setAlertClass('d-none');
+              setAlertMsg('');
+              navigate('/');
+              toggleRefresh(true);
+            }
+        } catch (error) {
+            setAlertClass('alert-danger');
+            setAlertMsg(error.message);
         }
     }
 
